@@ -4,14 +4,22 @@ This directory contains metadata and tracking information for agent-driven devel
 
 ## Contents
 
-### Core Documentation
+### Core State Tracking
+- **CURRENT_STATE.md**: **[PRIMARY HANDOFF DOCUMENT]** Complete project state for agent handoffs
+  - Current version, phase status, completed work
+  - Hardware configuration and access details
+  - Next steps and immediate actions
+  - Known issues and critical file locations
+  - **Status:** V1.03.01 - Phase 1 Complete, Ready for Phase 2
+
 - **version_log.md**: Project-wide changelog of all agent modifications
   - Tracks version numbers, user requests, files modified, and planning docs
   - Updated after major changes or task completion
   - Provides audit trail and context for future work
 
+### Implementation Planning
 - **roadmap_can_ping_pong.md**: **[ACTIVE ROADMAP]** Detailed implementation plan for establishing CAN PING/PONG communication
-  - Status: Planning Complete - Ready for Implementation
+  - Status: Phase 1 Complete - Ready for Phase 2 (TWAI Driver)
   - Hardware: ESP32-WROOM-32D (GPIO5/4) + Raspberry Pi 3B+ (MCP2515)
   - Date: 2026-01-22 (Updated with GPIO5/4 configuration)
   - Scope: Minimal CAN communication bring-up (no motor control yet)
@@ -30,6 +38,18 @@ This directory contains metadata and tracking information for agent-driven devel
   - CAN ID: 0x111 (STATUS class)
   - Payload: 4-byte uint32 sequence counter
   - Rationale and implementation details
+
+### Planning Documents
+Planning documents are stored in domain-specific thoughtprocesses folders:
+- **`esp/thoughtprocesses/`**: ESP32 firmware planning documents
+- **`pi/thoughtprocesses/`**: Raspberry Pi software planning documents  
+- **`protocol/thoughtprocesses/`**: Protocol changes and additions
+- **`docs/thoughtprocesses/`**: Documentation and workspace planning
+
+Current planning documents:
+- `esp/thoughtprocesses/2026-01-22_hello-world-verify.md` - Phase 1 hello world
+- `docs/thoughtprocesses/2026-01-22_pre-phase2-cleanup.md` - Workspace cleanup
+- `docs/thoughtprocesses/2026-01-22_workspace-audit-report.md` - File structure audit
 
 ## Active Roadmaps
 
@@ -50,17 +70,26 @@ This directory contains metadata and tracking information for agent-driven devel
 - No blocking calls on ESP
 - Follow AGENTS.md hard rules strictly
 
-**Hardware Decisions (APPROVED):**
-1. ✅ PONG command ID: 0x111 (STATUS class, 4-byte payload)
-2. ✅ ESP32 GPIO pins: GPIO5 (TX) / GPIO4 (RX)
-3. ✅ Pi SocketCAN interface: `can0`
-4. ✅ RTT threshold: <50ms target, 100ms max acceptable
+**Hardware Status (COMPLETE):**
+1. ✅ Physical wiring complete per `hardware_wiring_guide.md`
+2. ✅ Pi `can0` interface operational (UP, LOWER_UP)
+3. ✅ ESP32 hello world verified (Phase 1 complete)
+4. ✅ GPIO5/4 confirmed safe and readable
+5. ✅ Serial communication working (115200 baud)
+
+**Protocol Decisions (APPROVED):**
+1. ✅ PING command ID: 0x091 (COMMAND_ACK class, Pi sends)
+2. ✅ PONG command ID: 0x111 (STATUS class, ESP32 responds)
+3. ✅ PONG payload: 4-byte uint32 sequence counter (little-endian)
+4. ✅ CAN bitrate: 500 kbps
+5. ✅ RTT threshold: <50ms target, 100ms max acceptable
 
 **Next Steps:**
-1. Complete physical wiring per `hardware_wiring_guide.md`
-2. Configure Pi `/boot/config.txt` with MCP2515 overlay
-3. Create planning documents (ESP, Pi, protocol) before code
-4. Implement per roadmap Section 9 (17-step sequence)
+1. Create Phase 2 planning document (`esp/thoughtprocesses/2026-01-22_can-bringup-esp.md`)
+2. Implement TWAI driver per roadmap Phase 3
+3. Test CAN transmission from ESP32
+4. Implement Pi CAN receiver
+5. Verify PING/PONG round-trip
 
 ## Purpose
 

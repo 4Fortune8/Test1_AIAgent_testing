@@ -1,4 +1,38 @@
-# AGENTS.md – Ras## Agent Rules (READ FIRST)
+# AGENTS.md – Overnight Planning Run Mode
+
+**CURRENT MODE: OVERNIGHT PLANNING RUN**  
+**Branch: overnightRun**  
+**Objective: Complete CNC Motor Control System Design**
+**CHECK REGULARLY FOR UPDATES. Ebb and flow with the project's needs.**
+## Active Mission
+
+Plan and document a complete motor control system for CNC-style wheel movement. This is a PLANNING run - focus on design, documentation, and architecture, NOT implementation on hardware.
+
+### Overnight Run Goals
+1. ✅ Master planning document created
+2. Design complete CAN protocol (all 20+ message types)
+3. Create full ESP32 file structure with headers
+4. Design Pi-side architecture  
+5. Write PID controller implementation (code)
+6. Design complete state machine
+7. Create comprehensive test plans
+8. Document all safety requirements
+9. Design calibration procedures
+10. Create protocol validation framework
+
+### Rules for This Run
+- **PLANNING ONLY** - No hardware changes
+- **DOCUMENT EVERYTHING** - Every decision needs rationale
+- **BE THOROUGH** - This is the blueprint for months of work
+- **CHECK YOURSELF** - Review each design for consistency
+- **CROSS-REFERENCE** - Link all related documents
+- **THINK LONG-TERM** - Consider maintenance, debugging, upgrades
+
+---
+
+## Agent Rules (READ FIRST)
+
+**Meta-Rule: When editing this file, use minimal words. Be concise.**
 
 ### Hard Rules
 - **DO NOT introduce blocking delays on ESP firmware**
@@ -65,6 +99,22 @@ If unsure, ask before making architectural changes, if the user asks for a reque
    - After completing major changes or tasks, update `docs/agentcontext/version_log.md`
    - Log should include: version number, date, user request summary, files modified, planning doc reference
    - This creates a project-wide changelog of agent modifications
+
+### Version Numbering Rules
+
+Format: `V{major}.{step}.{query}`
+
+**Major (V1→V2): USER APPROVAL REQUIRED**
+- Architectural changes, protocol changes, major features
+- Agent MUST ask before incrementing
+
+**Step (V1.00→V1.01): Agent discretion**
+- Sub-features, refactors, configuration updates
+
+**Query (V1.00.00→V1.00.01): Automatic**
+- Individual interactions, fixes, documentation
+
+Most work = step/query increments. When unsure, use lower level.
 
 **Benefits:**
 - Humans can catch architectural issues early

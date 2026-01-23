@@ -2,11 +2,11 @@
 
 **Roadmap Reference:** `docs/agentcontext/roadmap_can_ping_pong.md`  
 **Date:** 2026-01-22  
-**Status:** Ready for Implementation (Pending Human Review)
+**Status:** Phase 1 Complete - Ready for Phase 2 (TWAI Driver)
 
 ---
 
-## Pre-Implementation (Human Approval Required)
+## Pre-Implementation (Human Approval Required) ✅ COMPLETE
 
 - [x] **PONG Command ID Allocated** ✅ APPROVED
   - Decision: 0x001 under STATUS class (CAN ID=0x111)
@@ -39,15 +39,31 @@
   - Status: ✅ APPROVED (2026-01-22)
 
 **Hardware Wiring Status:**
-- [ ] SN65HVD230 wired to ESP32 GPIO5/4 ⚠️ **ACTION REQUIRED**
-- [ ] SN65HVD230 RS pin grounded (high-speed mode) ⚠️ **ACTION REQUIRED**
-- [ ] 120Ω termination resistors installed at both ends ⚠️ **ACTION REQUIRED**
-- [ ] MCP2515 `/boot/config.txt` overlay configured (interrupt=25) ⚠️ **ACTION REQUIRED**
-- [ ] Shared ground between ESP32 and Pi ⚠️ **ACTION REQUIRED**
+- [x] SN65HVD230 wired to ESP32 GPIO5/4 ✅ **COMPLETE**
+- [x] SN65HVD230 RS pin grounded (high-speed mode) ✅ **COMPLETE**
+- [x] 120Ω termination resistors installed at both ends ✅ **COMPLETE**
+- [x] MCP2515 `/boot/firmware/config.txt` overlay configured (interrupt=25) ✅ **COMPLETE**
+- [x] Shared ground between ESP32 and Pi ✅ **COMPLETE**
+- [x] Pi `can0` interface UP and operational ✅ **COMPLETE**
 
 **New Protocol Documents Created:**
 - [x] `protocol/can_id_map.md` - Updated with complete ID reference table
 - [x] `protocol/can_invariants.md` - 15 binding invariants documented
+
+---
+
+## Phase 0: Hello World (ESP32 Verification) ✅ COMPLETE (V1.03.01)
+
+- [x] **ESP32 Hello World Implementation**
+  - Planning doc created: `esp/thoughtprocesses/2026-01-22_hello-world-verify.md`
+  - Source code: `esp32/src/main.cpp` (with `#include <Arduino.h>`)
+  - Build successful: 20.6% Flash, 6.6% RAM
+  - Upload successful: ESP32-D0WD-V3 (rev v3.1), MAC: 88:13:bf:07:ae:e4
+  - Serial output verified: Heartbeat every 1s at 115200 baud
+  - GPIO5: HIGH, GPIO4: LOW confirmed
+  - LED blinking on GPIO2 confirmed
+  - Non-blocking loop pattern verified
+  - Version tag: `V1.03.00` (initial), `V1.03.01` (with Arduino.h)
 
 ---
 
@@ -69,17 +85,20 @@
 
 ---
 
-## Implementation Phase 1: ESP32 TWAI Initialization
+## Implementation Phase 1: ESP32 TWAI Initialization ✅ COMPLETE (V1.04.00)
 
-- [ ] **Phase 3.1: TWAI Driver Init**
-  - ESP boots without crash
-  - Serial log shows "TWAI driver started"
-  - No error flags in status
-  - Version tag added: `V1.00.01`
+- [x] **Phase 3.1: TWAI Driver Init**
+  - ESP boots without crash ✅
+  - Serial log shows "TWAI driver started" ✅
+  - TWAI status: RUNNING ✅
+  - No error flags in status (Err:0) ✅
+  - Heartbeat continues working ✅
+  - LED blinking confirmed ✅
+  - Version tag added: `V1.04.00` ✅
 
 ---
 
-## Implementation Phase 2: ESP32 RX Task
+## Implementation Phase 2: ESP32 RX/TX Testing
 
 - [ ] **Phase 3.2: CAN RX Task on Core 1**
   - RX task created and pinned to Core 1

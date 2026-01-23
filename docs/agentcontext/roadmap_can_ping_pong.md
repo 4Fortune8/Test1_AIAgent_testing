@@ -78,12 +78,14 @@ Before ANY code is written, create these documents in the appropriate `thoughtpr
 **Required Contents:**
 - User request verbatim
 - **Hardware:** ESP32-WROOM-32D on UPeasy devkit
+- **Development Environment:** PlatformIO with Arduino framework (see `esp32/platformio.ini`)
 - **CAN Transceiver:** SN65HVD230 (3.3V logic, RS=GND for high-speed mode)
 - **Pin assignments:**
-  - **CAN TX: GPIO5** (safe default, overrides previous GPIO21)
-  - **CAN RX: GPIO4** (safe default, overrides previous GPIO22)
+  - **CAN TX: GPIO5** (safe default, defined in platformio.ini as CAN_TX_GPIO)
+  - **CAN RX: GPIO4** (safe default, defined in platformio.ini as CAN_RX_GPIO)
   - Rationale: GPIO4/5 are safe (no boot conflicts, not SPI flash, not UART0)
   - GPIO4/5 pins: Pin 26 (GPIO4), Pin 29 (GPIO5) on ESP32-WROOM-32D
+- **Build Configuration:** PlatformIO build flags include CAN_TX_GPIO=5, CAN_RX_GPIO=4, CAN_BITRATE=500000
 - TWAI driver configuration (bitrate, timing parameters, queue depths)
 - Core affinity strategy (which FreeRTOS task runs where)
 - Message parsing approach (how to extract Class/Node/Command from 11-bit ID)

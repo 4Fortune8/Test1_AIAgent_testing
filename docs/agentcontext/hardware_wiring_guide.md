@@ -1,7 +1,7 @@
 # CAN Bus Hardware Wiring Guide (Updated)
 **Date:** 2026-01-22 (v2)  
 **System:** ESP32-WROOM-32D ↔ Raspberry Pi 3B+ CAN Communication  
-**Status:** Ready for Physical Wiring  
+**Status:** ✅ WIRING COMPLETE - Ready for Software Configuration  
 **GPIO Configuration:** GPIO5 (TX) / GPIO4 (RX) - Safe defaults
 
 ---
@@ -16,7 +16,8 @@
 ### Raspberry Pi Side
 - **Board:** Raspberry Pi 3B+
 - **CAN Transceiver:** MCP2515 CAN Bus Module (SPI interface)
-- **Status:** ✅ Already wired to Pi SPI0
+- **Status:** ✅ Wired to Pi SPI0, `can0` interface UP
+- **SSH Access:** `ssh fabricpi@10.42.0.48` (password: fabricpi)
 
 ---
 
@@ -132,11 +133,17 @@ SN65HVD230 (ESP32 side)          MCP2515 (Pi side)
 
 ## 5. Raspberry Pi Software Configuration
 
-### Configure `/boot/config.txt`
+### SSH Connection
+```bash
+ssh fabricpi@10.42.0.48
+# Password: fabricpi
+```
+
+### Configure `/boot/firmware/config.txt`
 
 ```bash
 # Edit the config file (requires sudo)
-sudo nano /boot/config.txt
+sudo nano /boot/firmware/config.txt
 
 # Add or verify these lines:
 dtparam=spi=on
@@ -155,6 +162,7 @@ sudo reboot
 - `oscillator` parameter MUST match your MCP2515 crystal frequency (8 or 16 MHz)
 - `interrupt` parameter MUST match GPIO pin connected to MCP2515 INT (GPIO25)
 - Wrong oscillator frequency → no CAN communication
+- Modern Pi OS uses `/boot/firmware/config.txt` (not `/boot/config.txt`)
 
 ---
 
@@ -183,10 +191,11 @@ sudo reboot
 ### Raspberry Pi Issues
 | Symptom | Likely Cause | Solution |
 |---------|--------------|----------|
-| `can0` not visible | MCP2515 overlay missing | Check `/boot/config.txt`, reboot |
+| `can0` not visible | MCP2515 overlay missing | Check `/boot/firmware/config.txt`, reboot |
 | `mcp251x` not loaded | SPI not enabled | Add `dtparam=spi=on` to config |
 | Interrupt errors | Wrong GPIO in overlay | Verify `interrupt=25` matches wiring |
 | Bitrate errors | Wrong oscillator freq | Match `oscillator=` to crystal (8/16 MHz) |
+| Probe failed (err=110) | Oscillator mismatch or wiring | Try 16MHz if 8MHz fails, check SPI wiring |
 
 ### CAN Bus Issues
 | Symptom | Likely Cause | Solution |
@@ -229,9 +238,9 @@ sudo reboot
 - [ ] No ground loops (single GND path preferred)
 
 ### Raspberry Pi Configuration
-- [ ] `/boot/config.txt` contains `dtparam=spi=on`
-- [ ] `/boot/config.txt` contains `dtoverlay=mcp2515-can0,oscillator=8000000,interrupt=25`
-- [ ] Rebooted after editing `/boot/config.txt`
+- [ ] `/boot/firmware/config.txt` contains `dtparam=spi=on`
+- [ ] `/boot/firmware/config.txt` contains `dtoverlay=mcp2515-can0,oscillator=8000000,interrupt=25`
+- [ ] Rebooted after editing `/boot/firmware/config.txt`
 - [ ] Modules loaded: `lsmod | grep mcp251x` shows loaded
 - [ ] Interface visible: `ip link show can0` shows device
 
@@ -240,7 +249,7 @@ sudo reboot
 - [ ] No shorts between VCC and GND
 - [ ] Termination resistors correctly installed
 - [ ] GPIO pins match firmware configuration (GPIO5/4)
-- [ ] `/boot/config.txt` interrupt parameter matches wiring (GPIO25)
+- [ ] `/boot/firmware/config.txt` interrupt parameter matches wiring (GPIO25)
 
 ---
 
