@@ -1,7 +1,8 @@
-# CAN Bus Hardware Wiring Guide
-**Date:** 2026-01-22  
+# CAN Bus Hardware Wiring Guide (Updated)
+**Date:** 2026-01-22 (v2)  
 **System:** ESP32-WROOM-32D ↔ Raspberry Pi 3B+ CAN Communication  
-**Status:** Ready for Physical Wiring
+**Status:** Ready for Physical Wiring  
+**GPIO Configuration:** GPIO5 (TX) / GPIO4 (RX) - Safe defaults
 
 ---
 
@@ -10,7 +11,7 @@
 ### ESP32 Side
 - **Board:** ESP32-WROOM-32D on UPeasy devkit
 - **CAN Transceiver:** SN65HVD230 (3.3V logic)
-- **Selected Pins:** GPIO21 (TX), GPIO22 (RX)
+- **Selected Pins:** **GPIO5 (TX), GPIO4 (RX)** - Safe defaults, no boot conflicts
 
 ### Raspberry Pi Side
 - **Board:** Raspberry Pi 3B+
@@ -19,274 +20,249 @@
 
 ---
 
-## ESP32 → SN65HVD230 Wiring
+## 1. ESP32-WROOM-32D to SN65HVD230 Wiring
 
-### Connection Table
+| ESP32-WROOM-32D Pin | GPIO | Signal | → | SN65HVD230 Pin | Notes |
+|---------------------|------|--------|---|----------------|-------|
+| Pin 29              | GPIO5 | CAN TX | → | TX (D)        | Transmit data to transceiver |
+| Pin 26              | GPIO4 | CAN RX | → | RX (R)        | Receive data from transceiver |
+| Pin 2               | 3V3   | Power  | → | 3V3 (VCC)     | 3.3V supply only (NOT 5V) |
+| Pin 1, 15, or 38    | GND   | Ground | → | GND           | Common ground |
+| —                   | —     | —      | → | RS            | Connect RS to GND for high-speed mode (max bitrate) |
 
-| SN65HVD230 Pin | ESP32-WROOM-32D Pin | Pin Number | Notes |
-|----------------|---------------------|------------|-------|
-| VCC (3.3V)     | 3V3                 | Pin 2      | Power supply |
-| GND            | GND                 | Pin 1, 15, or 38 | Ground |
-| TX             | GPIO21              | Pin 33     | TWAI transmit |
-| RX             | GPIO22              | Pin 36     | TWAI receive |
-| RS             | GND                 | -          | High-speed mode (120kbps-1Mbps) |
-| CANH           | CAN Bus H           | -          | To MCP2515 CANH |
-| CANL           | CAN Bus L           | -          | To MCP2515 CANL |
+**Critical Notes:**
+- **GPIO5/4 are safe:** No boot mode conflicts, not SPI flash pins (GPIO6-11), not UART0 (GPIO1/3)
+- **3.3V only:** SN65HVD230 is a 3.3V device; connecting 5V will damage it
+- **RS pin:** Must be grounded (GND) for high-speed CAN (up to 1 Mbps)
 
-### Wiring Diagram (Text)
+### ESP32 Pin Reference (ESP32-WROOM-32D)
 ```
-ESP32-WROOM-32D          SN65HVD230           CAN Bus
-┌──────────────┐         ┌──────────┐         ┌────────┐
-│              │         │          │         │        │
-│ 3V3 (Pin 2)  ├────────►│ VCC      │         │        │
-│              │         │          │         │        │
-│ GND (Pin 1)  ├────────►│ GND      │         │        │
-│              │         │          │         │        │
-│ GPIO21 (33)  ├────────►│ TX       │         │        │
-│              │         │          │         │        │
-│ GPIO22 (36)  │◄────────┤ RX       │         │        │
-│              │         │          │         │        │
-│              │    GND ─┤ RS       │         │        │
-│              │         │          │         │        │
-│              │         │ CANH     ├────────►│ CAN_H  │
-│              │         │          │         │   |    │
-│              │         │ CANL     ├────────►│ CAN_L  │
-│              │         │          │         │   |    │
-└──────────────┘         └──────────┘         │  120Ω  │ ← Terminator
-                                               │   |    │
-                                               └───┴────┘
+GPIO4  → Pin 26 (CAN RX)
+GPIO5  → Pin 29 (CAN TX)
+3V3    → Pin 2  (Power)
+GND    → Pin 1, 15, or 38 (Ground)
 ```
 
-### Critical Notes
-
-1. **RS Pin (Slope Control):**
-   - **Connect RS to GND** for high-speed mode (supports 500 kbps)
-   - If left floating or connected to 3.3V: low-speed mode only (~50 kbps max)
-
-2. **GPIO21/22 Selection Rationale:**
-   - ✅ Safe: No boot mode conflicts
-   - ✅ Not connected to SPI flash (GPIO6-11)
-   - ✅ Not UART0 serial (GPIO1/3)
-   - ✅ Not boot mode pins (GPIO0, GPIO2, GPIO12)
-   - ✅ Commonly used for I2C/CAN in ESP32 projects
-
-3. **Power:**
-   - SN65HVD230 is 3.3V logic
-   - ESP32 GPIO outputs 3.3V (compatible)
-   - Do NOT use 5V on SN65HVD230 VCC
+**Why GPIO5/4?**
+- NOT boot mode pins (GPIO0, GPIO2, GPIO12)
+- NOT SPI flash pins (GPIO6-11, would brick device)
+- NOT UART0 (GPIO1/3, used for programming/debug)
+- Tested safe defaults for CAN communication
 
 ---
 
-## CAN Bus Termination
+## 2. Raspberry Pi 3B+ to MCP2515 Wiring
 
-### Required Configuration
-CAN bus requires **120Ω termination resistors at BOTH physical ends**.
+| MCP2515 Pin | Signal | → | Pi Physical Pin | Pi GPIO | Notes |
+|-------------|--------|---|-----------------|---------|-------|
+| VCC         | Power  | → | Pin 1 (or 17)   | 3.3V    | 3.3V supply only (NOT 5V) |
+| GND         | Ground | → | Pin 39 (or any) | GND     | Common ground |
+| SI (MOSI)   | SPI    | → | Pin 19          | GPIO10  | SPI0_MOSI |
+| SO (MISO)   | SPI    | → | Pin 21          | GPIO9   | SPI0_MISO |
+| SCK         | SPI    | → | Pin 23          | GPIO11  | SPI0_SCLK |
+| CS          | SPI    | → | Pin 24          | GPIO8   | SPI0_CE0 (Chip Select) |
+| INT         | Interrupt | → | Pin 22       | GPIO25  | MCP2515 interrupt to Pi |
 
-### Terminator Placement
-
-#### End 1: ESP32/SN65HVD230 Side
-```
-SN65HVD230 CANH ──┬── CAN_H
-                  │
-                 120Ω  ← Resistor between H and L
-                  │
-SN65HVD230 CANL ──┴── CAN_L
-```
-
-#### End 2: Pi/MCP2515 Side
-```
-MCP2515 CANH ──┬── CAN_H
-               │
-              120Ω  ← Resistor between H and L
-               │
-MCP2515 CANL ──┴── CAN_L
-```
-
-### Implementation Options
-
-**Option A: Soldered Resistors**
-- Solder 120Ω resistor directly between CANH/CANL on each transceiver module
-- Most reliable, permanent solution
-
-**Option B: Screw Terminal**
-- Use screw terminal blocks on CAN_H and CAN_L
-- Insert resistor into terminal alongside wires
-
-**Option C: Onboard Jumper (if available)**
-- Some MCP2515 and SN65HVD230 modules have onboard 120Ω with jumper
-- Check your specific modules
-- Enable jumper on BOTH ends
-
-**For Short Test Bus (<1m):**
-- Single terminator at one end MAY work
-- Proper CAN requires two terminators
-- Recommend installing both to avoid intermittent issues
+**Critical Notes:**
+- **3.3V only:** MCP2515 modules are typically 3.3V; verify before connecting
+- **SPI0 interface:** Pi has two SPI buses; we use SPI0 (GPIO8-11)
+- **INT pin:** GPIO25 used for interrupt; must match `/boot/config.txt` overlay parameter
 
 ---
 
-## Raspberry Pi MCP2515 Configuration
+## 3. CAN Bus Connections
 
-### Current Wiring Status ✅
-Already connected per your configuration:
+### Physical CAN Bus Wiring
+```
+SN65HVD230 (ESP32 side)          MCP2515 (Pi side)
+┌──────────┐                     ┌──────────┐
+│  CANH    ├─────────────────────┤  CANH    │
+│          │   (twisted pair)    │          │
+│  CANL    ├─────────────────────┤  CANL    │
+└──────────┘   max 5m for test   └──────────┘
+    |                                  |
+   120Ω                               120Ω
+(Terminator #1)                  (Terminator #2)
+```
 
-| MCP2515 Pin | Pi GPIO | Pi Pin | Function |
-|-------------|---------|--------|----------|
-| INT         | GPIO8   | 24     | Interrupt |
-| SCK         | GPIO10  | 23     | SPI Clock |
-| SI (MOSI)   | GPIO9   | 21     | SPI MOSI |
-| SO (MISO)   | GPIO11  | 23*    | SPI MISO |
-| CS          | GPIO7   | 26     | SPI Chip Select |
-| VCC         | 3.3V    | 1      | Power |
-| GND         | GND     | 39     | Ground |
+**Termination Resistors:**
+- **Required:** One 120Ω resistor at EACH physical end
+- **Location:** Between CAN_H and CAN_L at both ESP32/SN65HVD230 and Pi/MCP2515
+- **Verification:** Measure resistance between CAN_H and CAN_L with both terminators installed → should read **~60Ω** (two 120Ω in parallel)
+- **Short-term testing:** Can use single terminator if bus < 1m, but two is proper
 
-**Note:** You listed "SO → GPIO8 (Pin 23)" but GPIO8 is INT. Assuming MISO is GPIO11 (standard SPI0_MISO).
+---
 
-### Required: `/boot/config.txt` Configuration
+## 4. Complete System Diagram
 
-**Edit `/boot/config.txt` on Pi:**
+```
+        ESP32-WROOM-32D                                   Raspberry Pi 3B+
+      (UPeasy devkit)                                                     
+                                                                          
+      Pin 29 (GPIO5) ────────┐                            Pin 1 (3.3V) ──┐
+                              │                                           │
+      Pin 26 (GPIO4) ───────┐ │                           Pin 39 (GND) ──┼──┐
+                            │ │                                           │  │
+      Pin 2 (3.3V) ─────────┼─┼──┐                        Pin 19 (GPIO10)│  │
+                            │ │  │                         ↓             │  │
+      Pin 1/15/38 (GND) ────┼─┼──┼────────────────────────────────────────┼──┼──── Common GND
+                            │ │  │                                        │  │
+                            ↓ ↓  ↓                                        ↓  ↓
+                        ┌──────────┐                                  ┌─────────┐
+                        │SN65HVD230│                                  │ MCP2515 │
+                        │  (3.3V)  │                                  │  (SPI)  │
+                        │          │                                  │         │
+                        │ TX ←─────┤ GPIO5                            │ VCC ←───┤ 3.3V
+                        │ RX ←─────┤ GPIO4                            │ GND ←───┤ GND
+                        │ VCC ←────┤ 3.3V                             │ SI ←────┤ GPIO10
+                        │ GND ←────┤ GND                              │ SO ─────→ GPIO9
+                        │ RS ←─────┤ GND (high-speed)                 │ SCK ←───┤ GPIO11
+                        │          │                                  │ CS ←────┤ GPIO8
+                        │ CANH ────┼───── twisted ──────────────────  │ CANH ───┤ INT ←── GPIO25
+                        │          │      pair                        │         │
+                        │ CANL ────┼───── (~5m max) ─────────────────  │ CANL    │
+                        │          │                                  │         │
+                        │  [120Ω]  │                                  │  [120Ω] │
+                        └──────────┘                                  └─────────┘
+                       Terminator #1                                 Terminator #2
+                     (both ends required)                          (measures ~60Ω total)
+```
+
+---
+
+## 5. Raspberry Pi Software Configuration
+
+### Configure `/boot/config.txt`
+
 ```bash
+# Edit the config file (requires sudo)
 sudo nano /boot/config.txt
-```
 
-**Add these lines (if not present):**
-```
-# Enable SPI
+# Add or verify these lines:
 dtparam=spi=on
+dtoverlay=mcp2515-can0,oscillator=8000000,interrupt=25,spimaxfrequency=1000000
 
-# MCP2515 CAN Interface
-# Adjust oscillator to match your MCP2515 crystal (8MHz or 16MHz)
-# interrupt=8 for GPIO8 (Pin 24)
-# spimaxfrequency can be tuned (1-10 MHz, 1MHz is conservative)
-dtoverlay=mcp2515-can0,oscillator=8000000,interrupt=8,spimaxfrequency=1000000
-```
+# Where:
+#   oscillator=8000000 → For 8 MHz crystal (change to 16000000 if 16 MHz)
+#   interrupt=25 → GPIO25 (Pin 22) connected to MCP2515 INT
+#   spimaxfrequency=1000000 → Conservative 1 MHz SPI (can increase to 10 MHz)
 
-**If your MCP2515 has a 16MHz crystal:**
-```
-dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=8,spimaxfrequency=1000000
-```
-
-**Reboot after editing:**
-```bash
+# Save and reboot
 sudo reboot
 ```
 
-**Verify after reboot:**
-```bash
-dmesg | grep -i mcp251x
-# Should see: mcp251x spi0.1 can0: MCP2515 successfully initialized
-```
+**Critical:**
+- `oscillator` parameter MUST match your MCP2515 crystal frequency (8 or 16 MHz)
+- `interrupt` parameter MUST match GPIO pin connected to MCP2515 INT (GPIO25)
+- Wrong oscillator frequency → no CAN communication
 
 ---
 
-## Cable Connection
+## 6. Power-On Sequence
 
-### CAN Bus Cable (between ESP32 and Pi)
-
-**Minimum 2-wire:**
-- CAN_H: SN65HVD230 CANH ↔ MCP2515 CANH
-- CAN_L: SN65HVD230 CANL ↔ MCP2515 CANL
-
-**Recommended twisted pair:**
-- Use twisted pair cable to reduce EMI
-- CAT5/CAT6 works (use one pair)
-- Length: Keep <5m for 500 kbps testing
-
-**Common Ground:**
-- Ensure ESP32 GND and Pi GND are connected
-- Shared power supply OR explicit GND wire between systems
-- **Critical:** No common ground = unreliable communication
+1. **Verify all connections** (use checklist below)
+2. **Power on Raspberry Pi first** (allows SocketCAN to initialize)
+3. **Power on ESP32** (TWAI driver will initialize on boot)
+4. **Check MCP2515 initialization:** `dmesg | grep mcp251x`
+5. **Bring up can0 interface:** `sudo ip link set can0 up type can bitrate 500000`
+6. **Verify interface:** `ip link show can0` (should show UP state)
+7. **Check for errors:** `ip -s link show can0` (TX/RX errors should be 0)
 
 ---
 
-## Verification Checklist
+## 7. Troubleshooting
 
-Before powering on, verify:
+### ESP32 Issues
+| Symptom | Likely Cause | Solution |
+|---------|--------------|----------|
+| ESP32 won't boot | GPIO5/4 wiring error | Disconnect CAN wires, verify boot |
+| TWAI init fails | Wrong GPIO pins in code | Check `#define CAN_TX_GPIO 5` / `CAN_RX_GPIO 4` |
+| No CAN traffic | SN65HVD230 not powered | Verify 3.3V supply to transceiver |
+| Bus-off errors | Termination missing | Install 120Ω resistors at both ends |
 
-### ESP32 Side
-- [ ] SN65HVD230 VCC connected to ESP32 3.3V (not 5V)
-- [ ] SN65HVD230 GND connected to ESP32 GND
-- [ ] SN65HVD230 TX connected to GPIO21 (Pin 33)
-- [ ] SN65HVD230 RX connected to GPIO22 (Pin 36)
-- [ ] SN65HVD230 RS connected to GND (high-speed mode)
-- [ ] 120Ω resistor between CANH and CANL
+### Raspberry Pi Issues
+| Symptom | Likely Cause | Solution |
+|---------|--------------|----------|
+| `can0` not visible | MCP2515 overlay missing | Check `/boot/config.txt`, reboot |
+| `mcp251x` not loaded | SPI not enabled | Add `dtparam=spi=on` to config |
+| Interrupt errors | Wrong GPIO in overlay | Verify `interrupt=25` matches wiring |
+| Bitrate errors | Wrong oscillator freq | Match `oscillator=` to crystal (8/16 MHz) |
 
-### Raspberry Pi Side
-- [ ] MCP2515 already wired to Pi SPI0 ✅
-- [ ] `/boot/config.txt` contains MCP2515 overlay
-- [ ] Oscillator frequency matches MCP2515 crystal (8MHz or 16MHz)
-- [ ] 120Ω resistor between CANH and CANL
-
-### CAN Bus
-- [ ] CAN_H connected between both transceivers
-- [ ] CAN_L connected between both transceivers
-- [ ] ESP32 GND and Pi GND share common ground
-- [ ] Total bus length <5m for initial testing
-
----
-
-## Power-On Sequence
-
-1. **Power ESP32** (via USB or external 5V)
-   - Verify: Onboard LED (if any) or serial output
-
-2. **Power Raspberry Pi** (via USB-C or GPIO header)
-   - Wait for boot (30-60 seconds)
-
-3. **Check MCP2515 initialization:**
-   ```bash
-   dmesg | grep -i mcp251x
-   # Look for: "MCP2515 successfully initialized"
-   ```
-
-4. **Check CAN interface:**
-   ```bash
-   ip link show can0
-   # Should see: can0 interface (may be DOWN, that's OK)
-   ```
-
-5. **Bring up CAN interface:**
-   ```bash
-   sudo ip link set can0 type can bitrate 500000
-   sudo ip link set can0 up
-   ip link show can0
-   # Should show: UP state, bitrate 500000
-   ```
+### CAN Bus Issues
+| Symptom | Likely Cause | Solution |
+|---------|--------------|----------|
+| High error rates | Missing termination | Measure ~60Ω between CAN_H/L |
+| No communication | CAN_H/L swapped | Swap CANH and CANL on one end |
+| Intermittent errors | Shared ground missing | Connect ESP32 GND to Pi GND |
+| Bus-off condition | Cable too long | Reduce to <5m for 500 kbps |
 
 ---
 
-## Troubleshooting
+## 8. Verification Checklist
 
-### ESP32 won't boot after wiring
-- **Check:** GPIO0 not pulled LOW (boot mode)
-- **Check:** GPIO12 not pulled HIGH at boot
-- **Fix:** Disconnect SN65HVD230, verify ESP boots alone, reconnect
+### ESP32 Wiring
+- [ ] GPIO5 (Pin 29) → SN65HVD230 TX
+- [ ] GPIO4 (Pin 26) → SN65HVD230 RX
+- [ ] 3.3V (Pin 2) → SN65HVD230 VCC
+- [ ] GND (Pin 1/15/38) → SN65HVD230 GND
+- [ ] SN65HVD230 RS → GND (for high-speed mode)
 
-### MCP2515 not detected on Pi
-- **Check:** SPI enabled in `/boot/config.txt`
-- **Check:** Correct oscillator frequency (8MHz vs 16MHz)
-- **Run:** `dmesg | grep spi` to see SPI initialization
-- **Run:** `ls /dev/spi*` to verify SPI device exists
+### Raspberry Pi Wiring
+- [ ] GPIO10 (Pin 19) → MCP2515 SI (MOSI)
+- [ ] GPIO9 (Pin 21) → MCP2515 SO (MISO)
+- [ ] GPIO11 (Pin 23) → MCP2515 SCK
+- [ ] GPIO8 (Pin 24) → MCP2515 CS
+- [ ] GPIO25 (Pin 22) → MCP2515 INT
+- [ ] 3.3V (Pin 1) → MCP2515 VCC
+- [ ] GND (Pin 39) → MCP2515 GND
 
-### CAN interface won't come UP
-- **Check:** Termination resistors installed at both ends
-- **Check:** CAN_H and CAN_L not swapped
-- **Run:** `dmesg | grep can` for kernel messages
-- **Try:** Lower bitrate: `sudo ip link set can0 type can bitrate 250000`
+### CAN Bus Wiring
+- [ ] SN65HVD230 CANH → MCP2515 CANH (twisted pair cable)
+- [ ] SN65HVD230 CANL → MCP2515 CANL (twisted pair cable)
+- [ ] 120Ω resistor between CANH/CANL at ESP32 end
+- [ ] 120Ω resistor between CANH/CANL at Pi end
+- [ ] Measured resistance ~60Ω between CAN_H and CAN_L
 
-### No communication between nodes
-- **Verify:** Both transceivers powered
-- **Verify:** Common ground between ESP32 and Pi
-- **Check:** Termination resistors (measure ~60Ω between CAN_H and CAN_L)
-- **Test:** Use `candump can0` on Pi to see traffic
-- **Test:** Use `cansend can0 123#DEADBEEF` on Pi to send test frame
+### Shared Ground
+- [ ] ESP32 GND connected to Pi GND (mandatory for reliable CAN)
+- [ ] All devices powered from stable supplies
+- [ ] No ground loops (single GND path preferred)
+
+### Raspberry Pi Configuration
+- [ ] `/boot/config.txt` contains `dtparam=spi=on`
+- [ ] `/boot/config.txt` contains `dtoverlay=mcp2515-can0,oscillator=8000000,interrupt=25`
+- [ ] Rebooted after editing `/boot/config.txt`
+- [ ] Modules loaded: `lsmod | grep mcp251x` shows loaded
+- [ ] Interface visible: `ip link show can0` shows device
+
+### Pre-Test Verification
+- [ ] No loose connections
+- [ ] No shorts between VCC and GND
+- [ ] Termination resistors correctly installed
+- [ ] GPIO pins match firmware configuration (GPIO5/4)
+- [ ] `/boot/config.txt` interrupt parameter matches wiring (GPIO25)
 
 ---
 
-## Ready to Proceed?
+## 9. Next Steps
 
-Once wiring is complete:
-1. Follow **Power-On Sequence** above
-2. Proceed to roadmap **Phase 3.1** (ESP32 TWAI init)
-3. Proceed to roadmap **Phase 4.1** (Pi SocketCAN config)
+After completing physical wiring and verification:
 
-**All hardware decisions finalized. Ready for implementation.**
+1. **Create ESP planning document:** `esp/thoughtprocesses/2026-01-22_can-bringup-esp.md`
+2. **Create Pi planning document:** `pi/thoughtprocesses/2026-01-22_can-bringup-pi.md`
+3. **Create protocol planning:** `protocol/thoughtprocesses/2026-01-22_ping-pong-spec.md`
+4. **Implement ESP TWAI initialization** with GPIO5/4 configuration
+5. **Test PING/PONG communication** per roadmap
+
+---
+
+## 10. Reference Documents
+
+- **Main Roadmap:** `docs/agentcontext/roadmap_can_ping_pong.md`
+- **Protocol Specification:** `protocol/can_id_map.md`, `protocol/can_invariants.md`
+- **PONG Command Spec:** `docs/agentcontext/protocol_amendment_pong.md`
+- **Implementation Checklist:** `docs/agentcontext/checklist_can_ping_pong.md`
+
+---
+
+**End of Wiring Guide**

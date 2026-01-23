@@ -4,6 +4,7 @@ This directory contains metadata and tracking information for agent-driven devel
 
 ## Contents
 
+### Core Documentation
 - **version_log.md**: Project-wide changelog of all agent modifications
   - Tracks version numbers, user requests, files modified, and planning docs
   - Updated after major changes or task completion
@@ -11,14 +12,35 @@ This directory contains metadata and tracking information for agent-driven devel
 
 - **roadmap_can_ping_pong.md**: **[ACTIVE ROADMAP]** Detailed implementation plan for establishing CAN PING/PONG communication
   - Status: Planning Complete - Ready for Implementation
-  - Date: 2026-01-22
+  - Hardware: ESP32-WROOM-32D (GPIO5/4) + Raspberry Pi 3B+ (MCP2515)
+  - Date: 2026-01-22 (Updated with GPIO5/4 configuration)
   - Scope: Minimal CAN communication bring-up (no motor control yet)
+
+- **hardware_wiring_guide.md**: Complete physical wiring instructions
+  - ESP32 GPIO5 (TX) / GPIO4 (RX) to SN65HVD230 transceiver
+  - Raspberry Pi SPI (GPIO10/9/11/8/25) to MCP2515 transceiver
+  - CAN bus termination, power, and troubleshooting
+
+- **checklist_can_ping_pong.md**: Implementation tracking checklist
+  - Phase-by-phase task list
+  - Hardware approval status
+  - Testing and validation checkboxes
+
+- **protocol_amendment_pong.md**: PONG command specification (APPROVED)
+  - CAN ID: 0x111 (STATUS class)
+  - Payload: 4-byte uint32 sequence counter
+  - Rationale and implementation details
 
 ## Active Roadmaps
 
 ### CAN PING/PONG Communication
 **Document:** `roadmap_can_ping_pong.md`  
-**Status:** Planning Complete - Awaiting Human Review  
+**Status:** Planning Complete - Ready for Physical Wiring  
+**Current Hardware Configuration:**
+- **ESP32:** GPIO5 (TX, Pin 29) / GPIO4 (RX, Pin 26) - Safe defaults, no boot conflicts
+- **Pi:** MCP2515 on SPI0 (MOSI=GPIO10, MISO=GPIO9, SCLK=GPIO11, CS=GPIO8, INT=GPIO25)
+- **CAN:** 500 kbps, 120Ω termination at both ends, shared ground required
+
 **Purpose:** Establish minimal, robust CAN communication between Raspberry Pi and ESP32
 
 **Critical Requirements:**
@@ -28,14 +50,17 @@ This directory contains metadata and tracking information for agent-driven devel
 - No blocking calls on ESP
 - Follow AGENTS.md hard rules strictly
 
-**Human Review Required:**
-1. Confirm PONG command ID allocation (recommended: 0x001 under STATUS class → ID=0x111)
-2. Confirm ESP32 GPIO pin assignments for CAN TX/RX
-3. Confirm SocketCAN interface name on Pi (can0 vs can1)
-4. Approve acceptable RTT threshold (currently 100ms)
+**Hardware Decisions (APPROVED):**
+1. ✅ PONG command ID: 0x111 (STATUS class, 4-byte payload)
+2. ✅ ESP32 GPIO pins: GPIO5 (TX) / GPIO4 (RX)
+3. ✅ Pi SocketCAN interface: `can0`
+4. ✅ RTT threshold: <50ms target, 100ms max acceptable
 
-**Implementation Sequence:**
-See Section 9 of `roadmap_can_ping_pong.md` for detailed 17-step sequence.
+**Next Steps:**
+1. Complete physical wiring per `hardware_wiring_guide.md`
+2. Configure Pi `/boot/config.txt` with MCP2515 overlay
+3. Create planning documents (ESP, Pi, protocol) before code
+4. Implement per roadmap Section 9 (17-step sequence)
 
 ## Purpose
 

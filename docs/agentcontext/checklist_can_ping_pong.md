@@ -18,16 +18,18 @@
   - Enables duplicate detection, reboot detection, diagnostics
   - Human approved: 2026-01-22
 
-- [x] **ESP32 GPIO Pins Confirmed** ✅ APPROVED
+- [x] **ESP32 GPIO Pins Confirmed** ✅ APPROVED (Updated 2026-01-22)
   - Board: ESP32-WROOM-32D on UPeasy devkit
   - Transceiver: SN65HVD230 (3.3V)
-  - CAN TX GPIO: GPIO21 (Pin 33)
-  - CAN RX GPIO: GPIO22 (Pin 36)
+  - **CAN TX GPIO: GPIO5 (Pin 29)**
+  - **CAN RX GPIO: GPIO4 (Pin 26)**
+  - Rationale: Safe defaults, no boot conflicts
   - Human approved: 2026-01-22
 
-- [x] **Pi SocketCAN Interface Confirmed** ✅ APPROVED
+- [x] **Pi SocketCAN Interface Confirmed** ✅ APPROVED (Updated 2026-01-22)
   - Board: Raspberry Pi 3B+
-  - Transceiver: MCP2515 (SPI, CS=GPIO7, INT=GPIO8)
+  - Transceiver: MCP2515 (SPI interface)
+  - SPI Pins: MOSI=GPIO10, MISO=GPIO9, SCLK=GPIO11, CS=GPIO8, INT=GPIO25
   - Interface name: `can0`
   - Human approved: 2026-01-22
 
@@ -37,9 +39,11 @@
   - Status: ✅ APPROVED (2026-01-22)
 
 **Hardware Wiring Status:**
-- [ ] SN65HVD230 wired to ESP32 GPIO21/22 ⚠️ **ACTION REQUIRED**
+- [ ] SN65HVD230 wired to ESP32 GPIO5/4 ⚠️ **ACTION REQUIRED**
+- [ ] SN65HVD230 RS pin grounded (high-speed mode) ⚠️ **ACTION REQUIRED**
 - [ ] 120Ω termination resistors installed at both ends ⚠️ **ACTION REQUIRED**
-- [ ] MCP2515 `/boot/config.txt` overlay configured ⚠️ **ACTION REQUIRED**
+- [ ] MCP2515 `/boot/config.txt` overlay configured (interrupt=25) ⚠️ **ACTION REQUIRED**
+- [ ] Shared ground between ESP32 and Pi ⚠️ **ACTION REQUIRED**
 
 **New Protocol Documents Created:**
 - [x] `protocol/can_id_map.md` - Updated with complete ID reference table
